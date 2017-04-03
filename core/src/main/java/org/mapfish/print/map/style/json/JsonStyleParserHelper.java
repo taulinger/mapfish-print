@@ -30,13 +30,15 @@ import org.geotools.styling.StyleBuilder;
 import org.geotools.styling.Symbolizer;
 import org.geotools.styling.TextSymbolizer;
 import org.mapfish.print.ExceptionUtils;
+import org.mapfish.print.URIUtils;
 import org.mapfish.print.config.Configuration;
 import org.mapfish.print.map.DistanceUnit;
+import org.mapfish.print.processor.http.MapUriProcessor;
 import org.mapfish.print.wrapper.json.PJsonObject;
 import org.opengis.filter.expression.Expression;
 import org.opengis.filter.expression.Literal;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.client.ClientHttpRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.client.ClientHttpRequestFactory;
 
 import java.awt.Color;
@@ -61,6 +63,7 @@ import static org.mapfish.print.map.style.json.MapfishJsonStyleParserPlugin.Vers
  * Methods shared by various style versions for creating geotools SLD styles from the json format mapfish supports.
  */
 public final class JsonStyleParserHelper {
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonStyleParserHelper.class);
 
     static final String JSON_FONT_FAMILY = "fontFamily";
     static final String JSON_FONT_SIZE = "fontSize";
@@ -180,18 +183,18 @@ public final class JsonStyleParserHelper {
         graphic.graphicalSymbols().clear();
         if (styleJson.has(JSON_EXTERNAL_GRAPHIC)) {
             String externalGraphicUrl = validateURL(styleJson.getString(JSON_EXTERNAL_GRAPHIC));
+            final String graphicFormat = getGraphicFormat(externalGraphicUrl, styleJson);
             try {
                 final URI uri = URI.create(externalGraphicUrl);
                 if (uri.getScheme().startsWith("http")) {
-                    final ClientHttpRequest request =
-                            this.clientHttpRequestFactory.createRequest(uri, HttpMethod.GET);
-                    externalGraphicUrl = request.getURI().toString();
+                    LOGGER.debug("Trying to transform {} into a Base64 data URL", externalGraphicUrl);
+                    externalGraphicUrl = URIUtils.toBase64Url(this.clientHttpRequestFactory, uri, graphicFormat);
+                    LOGGER.debug("Transformed URL: {}", externalGraphicUrl);
                 }
-            } catch (IOException ignored) {
-                // ignored
+            } catch (IOException e) {
+                LOGGER.warn("Failed transforming {} into a Base64 data URL", externalGraphicUrl, e);
             }
 
-            final String graphicFormat = getGraphicFormat(externalGraphicUrl, styleJson);
             final ExternalGraphic externalGraphic = this.styleBuilder.createExternalGraphic(externalGraphicUrl, graphicFormat);
 
             graphic.graphicalSymbols().add(externalGraphic);

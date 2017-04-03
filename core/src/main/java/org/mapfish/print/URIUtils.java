@@ -2,10 +2,14 @@ package org.mapfish.print;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Closer;
+import org.geotools.data.Base64;
 import org.mapfish.print.http.MfClientHttpRequestFactory;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpResponse;
 
 import java.io.BufferedReader;
@@ -252,6 +256,28 @@ public final class URIUtils {
             return toString(requestFactory, url.toURI());
         } catch (URISyntaxException e) {
             throw ExceptionUtils.getRuntimeException(e);
+        }
+    }
+
+    /**
+     * @param requestFactory Request factory for making the request.
+     * @param uri            the uri to load data from.
+     * @param mime           the mime type
+     * @return the base64 encoded URL with the content of url
+     */
+    public static String toBase64Url(final ClientHttpRequestFactory requestFactory, final URI uri,
+                                     final String mime) throws IOException {
+        Closer closer = Closer.create();
+        try {
+            ClientHttpResponse response = closer.register(requestFactory.createRequest(uri, HttpMethod.GET).execute());
+            if (response.getStatusCode().series() != HttpStatus.Series.SUCCESSFUL) {
+                throw new IOException(String.format("Invalid HTTP status code: %d (%s)",
+                        response.getStatusCode().value(), response.getStatusText()));
+            }
+            InputStream input = closer.register(response.getBody());
+            return "data:" + mime + ";base64," + Base64.encodeBytes(ByteStreams.toByteArray(input));
+        } finally {
+            closer.close();
         }
     }
 
