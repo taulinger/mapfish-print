@@ -1,0 +1,10 @@
+{
+    "layout": "report",
+    "outputFormat": "pdf",
+    "attributes": {
+        "map": {
+            "projection": "EPSG:21781",
+            "dpi": 72
+        }
+    }
+}

@@ -1,0 +1,109 @@
+throwErrorOnExtraParameters: true
+
+templates:
+    report: !template
+        reportTemplate: A4_Portrait.jrxml
+        attributes:
+            features: !features {}
+            map: !map
+                maxDpi: 254
+                width: 555
+                height: 675
+            overlayLayers: !staticLayers
+                default:
+                    layers:
+                    -   type: geoJson
+                        style:
+                            fillColor: "#ff0000"
+            backgroundLayers: !staticLayers
+                default:
+                    layers:
+                    -   type: wms
+                        baseURL: "http://geoview.bl.ch/main/wsgi/mapserv_proxy"
+                        imageFormat: "image/png"
+                        layers:
+                        - pk_25_farbig
+                        - pk_50_farbig
+                        - pk_100_farbig
+                        - pk_200_farbig
+                        - pk_500_farbig
+                        - boflaeche
+                        - selbstrecht
+                        - liegenschaft
+                        - wegrecht
+                        - einzelobjekt_flaeche
+                        - einzelobjekt_linie
+                        - rohrleitungen_linie
+                        - einzelobjekt_punkt
+                        - einzelobjekt_linie_symbol
+                        - gemeindegrenzen
+                        - kantonsgrenze
+                        - landesgrenze
+                        - hgp
+                        - grenzpunkte
+                        - grundstueck_label
+                        - strassenname_label
+                        - hausnummern_label
+                        - lfp1
+                        - lfp2
+                        - lfp3
+                        - hfp1
+                        - hfp2
+                        - hfp3
+                        - bobesymbol
+                        serverType: mapserver
+                        useNativeAngle: true
+                        version: "1.0.0"
+
+        processors: &processors
+        - !reportBuilder # compile all reports in current directory
+            directory: '.'
+        - !configureHttpRequests &configureHttpRequests
+            httpProcessors:
+            - !mapUri
+                mapping:
+                    (https?)://${__import__('re').escape(host)}/(.*): "http://127.0.0.1/$2"
+            - !forwardHeaders
+                matchers:
+                - !localMatch {}
+                headers:
+                - Cookie
+                - Host
+            - !forwardHeaders
+                headers:
+                - Referer
+            - !restrictUris
+                matchers:
+                - !localMatch
+                  pathRegex: '/${__import__('re').escape(instanceid)}/wsgi/mapserv_proxy'
+                - !localMatch
+                  pathRegex: '/${__import__('re').escape(instanceid)}/tiles/.*'
+                - !localMatch
+                  pathRegex: '/2\.0/tiles/.*'
+                - !localMatch
+                  reject: true
+                - !ipMatch
+                  ip: 10.0.0.0
+                  mask: 255.0.0.0
+                  reject: true
+                - !ipMatch
+                  ip: 172.16.0.0
+                  mask: 255.240.0.0
+                  reject: true
+                - !ipMatch
+                  ip: 192.168.0.0
+                  mask: 255.255.0.0
+                  reject: true
+                - !acceptAll {}
+        - !addBackgroundLayers
+            inputMapper:
+                backgroundLayers: staticLayers
+        - !addOverlayLayers
+            inputMapper:
+                overlayLayers: staticLayers
+        - !setFeatures {}
+        - !prepareLegend
+            template: legend.jrxml
+        - !createNorthArrow {}
+        - !createScalebar {}
+        - !createMap {}
