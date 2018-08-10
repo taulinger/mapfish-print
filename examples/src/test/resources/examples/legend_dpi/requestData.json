@@ -19,19 +19,19 @@
             "name": "",
             "classes": [{
                 "name": "Arbres",
-                "dpi": "300",
+                "dpi": 300,
                 "icons": ["http://localhost:8080/examples/data/www/legends/legend1.png"]
             }, {
                 "name": "Peturbations",
-                "dpi": "300",
+                "dpi": 300,
                 "icons": ["http://localhost:8080/examples/data/www/legends/legend2.png"]
             }, {
                 "name": "Points de vente",
-                "dpi": "300",
+                "dpi": 300,
                 "icons": ["http://localhost:8080/examples/data/www/legends/legend3.png"]
             }, {
                 "name": "Alea",
-                "dpi": "300",
+                "dpi": 300,
                 "icons": ["http://localhost:8080/examples/data/www/legends/legend4.png"]
             }]
         }
