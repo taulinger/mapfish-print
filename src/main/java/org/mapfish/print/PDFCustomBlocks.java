@@ -89,7 +89,7 @@ public class PDFCustomBlocks extends PdfPageEventHelper {
         final PdfContentByte dc = writer.getDirectContent();
         addHeader(document, dc);
         addFooter(document, dc);
-        addErrors(writer);
+//        addErrors(writer);
         super.onEndPage(writer, document);
     }
 
